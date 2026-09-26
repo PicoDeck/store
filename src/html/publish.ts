@@ -3,7 +3,6 @@ import { renderPage } from "./layout";
 export function renderPublishPage(): string {
   const body = `
 <div class="prose">
-<div class="page-head"><h2>Publish an app</h2><p class="meta">Four steps, no sign-up</p></div>
 <p>The store is an automatic index of public GitHub repositories. There is no registration and no review queue; listing means a repository tagged itself, not that PicoDeck vetted it.</p>
 <ol>
 <li>Push your app to a <strong>public</strong> GitHub repository (not a fork) with <code>app.json</code> at the root.</li>
@@ -11,8 +10,8 @@ export function renderPublishPage(): string {
 <li>Create a GitHub Release with exactly one <code>.zip</code> asset containing your app files at the archive root.</li>
 <li>Wait up to 30 minutes, then check <a href="/status">status</a> if it is not listed.</li>
 </ol>
-<h3>app.json</h3>
-<pre>{
+<h2>app.json</h2>
+<pre class="pd-pre">{
   "id": "com.example.snake",
   "name": "Snake",
   "version": "1.2.0",
@@ -30,11 +29,11 @@ export function renderPublishPage(): string {
   "asset": "snake.zip"
 }</pre>
 <p><code>id</code>, <code>name</code> and <code>version</code> are required. The index reads <code>app.json</code> at the release tag, so tag after bumping the version. <code>category</code> is one of <code>games, tools, system, demos, emulators, network</code>, shown in the store as Games, Tools and so on. <code>asset</code> is only needed when the release has more than one ZIP. <code>dirname</code> defaults to the last segment of the id.</p>
-<h3>Icons, screenshots and keywords</h3>
+<h2>Icons, screenshots and keywords</h2>
 <p>All three are optional. <code>icon</code> and <code>screenshots</code> are paths to images committed in your repository, relative to its root, read at the release tag so they are versioned with the app. Use <code>.png</code>, <code>.jpg</code>, <code>.gif</code> or <code>.webp</code>; a square icon of about 128 pixels looks best, and at most four screenshots are listed. <code>keywords</code> is a list of up to eight short words that the store searches alongside the name, description and author. A value the index cannot read is dropped with a note on the <a href="/status">status page</a> rather than rejecting the app.</p>
-<h3>The ZIP</h3>
+<h2>The ZIP</h2>
 <p>Files must sit at the archive root: <code>app.json</code> plus <code>main.lua</code> (Lua app) or <code>main.elf</code> (native app), and any assets. Do not wrap them in a folder. The ZIP must be at most 16 MB, and the <code>id</code> in the ZIP's <code>app.json</code> must equal the one in the repository. The index computes the SHA-256 itself; you do not publish a checksum.</p>
-<h3>Rejection reasons</h3>
+<h2>Rejection reasons</h2>
 <p>The <a href="/status">status page</a> shows one of these codes next to any repository that is not listed.</p>
 <details class="reasons-wrap" id="reasons"><summary>All rejection reasons</summary>
 <dl class="reasons">
@@ -63,8 +62,8 @@ export function renderPublishPage(): string {
 <dt><code>blocked</code></dt><dd>Delisted by the maintainer.</dd>
 </dl>
 </details>
-<h3>Updating</h3>
+<h2>Updating</h2>
 <p>Bump <code>version</code> in <code>app.json</code>, tag a new Release with a new ZIP. Devices see the update on their next catalog fetch. Removing the topic delists the app on the next refresh.</p>
 </div>`;
-  return renderPage({ title: "Publish · PicoDeck App Store", description: "How to list an app in the PicoDeck App Store", body, path: "/publish", script: "if(matchMedia('(min-width:641px)').matches)document.getElementById('reasons').open=true;" });
+  return renderPage({ title: "Publish · PicoDeck App Store", description: "How to list an app in the PicoDeck App Store", heading: "Publish an app", intro: `<p class="intro">Four steps, no sign-up.</p>`, body, path: "/publish", script: "if(matchMedia('(min-width:641px)').matches)document.getElementById('reasons').open=true;" });
 }

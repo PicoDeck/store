@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { escapeHtml, formatDate, renderPage, safeUrl } from "../src/html/layout";
+import { BRAND, escapeHtml, formatDate, renderPage, safeUrl } from "../src/html/layout";
 import { renderIndexPage } from "../src/html/index";
 import { renderAppPage } from "../src/html/app";
 import { renderStatusPage } from "../src/html/status";
@@ -41,15 +41,35 @@ describe("renderPage", () => {
     const html = renderPage({ title: "T", description: "D", body: "<p>hi</p>" });
     expect(html).toContain("<!doctype html>");
     expect(html).toContain("<title>T</title>");
-    expect(html).toContain('name="color-scheme" content="light dark"');
+    expect(html).toContain('name="color-scheme" content="dark"');
     expect(html).toContain('<link rel="icon"');
     expect(html).toContain("<p>hi</p>");
   });
-  it("marks the current page in the nav and adds the footer", () => {
+  it("links the shared brand stylesheet from picodeck.net", () => {
+    const html = renderPage({ title: "T", description: "D", body: "" });
+    expect(BRAND).toBe("https://picodeck.net/brand/v1");
+    expect(html).toContain('<link rel="stylesheet" href="https://picodeck.net/brand/v1/brand.css">');
+    expect(html).toContain('<link rel="preload" href="https://picodeck.net/brand/v1/picodeck-6x8.woff2" as="font" type="font/woff2" crossorigin>');
+    expect(html).toContain('<body class="pd-page">');
+    expect(html.indexOf("brand.css")).toBeLessThan(html.indexOf("<style>"));
+  });
+  it("shares the site title bar, with the firmware version when known", () => {
+    const html = renderPage({ title: "T", description: "D", body: "", firmware: "0.3.0" });
+    expect(html).toContain('<header class="pd-titlebar">');
+    expect(html).toContain('<a href="https://picodeck.net/try/">Try it</a>');
+    expect(html).toContain('<a href="/" aria-current="page">Store</a>');
+    expect(html).toContain('<a class="pd-status" href="https://picodeck.net/download/">v0.3.0</a>');
+    expect(renderPage({ title: "T", description: "D", body: "" })).not.toContain("pd-status");
+  });
+  it("shows the heading, or a link back to the list without one", () => {
+    expect(renderPage({ title: "T", description: "D", body: "", heading: "A & B" })).toContain('<h1 class="pd-title">A &amp; B</h1>');
+    expect(renderPage({ title: "T", description: "D", body: "" })).toContain('<a class="crumb" href="/">');
+  });
+  it("marks the current page in the store tabs and adds the footer", () => {
     const html = renderPage({ title: "T", description: "D", body: "", path: "/status" });
-    expect(html).toContain('<a href="/status" aria-current="page">Status</a>');
-    expect(html).not.toContain('<a href="/" aria-current="page">');
-    expect(html).toContain("<footer>");
+    expect(html).toContain('<a class="pd-tab" href="/status" aria-current="page">Status</a>');
+    expect(html).not.toContain('<a class="pd-tab" href="/" aria-current="page">');
+    expect(html).toContain('<footer class="pd-footer">');
     expect(html).toContain('href="/catalog.json"');
     expect(html).not.toContain('<nav aria-label="Site"><a href="/">Apps</a><a href="/publish">Publish</a><a href="/status">Status</a><a href="/catalog.json"');
   });
@@ -64,27 +84,29 @@ describe("renderIndexPage", () => {
     expect(html).not.toContain("<script>alert");
     expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;&quot;");
     expect(html).toContain('href="/apps/com.example.snake"');
-    expect(html).toContain('href="https://github.com/example/picodeck-snake/releases/download/v1.2.0/snake.zip"');
     expect(html).toContain('data-category="games"');
     expect(html).toContain('data-stars="17"');
     expect(html).toContain("Firmware 0.1.0");
     expect(html).toContain('<time datetime="');
     expect(html).not.toContain("generated 20");
     expect(html).toContain('href="/publish"');
-    expect(html.match(/class="card"/g)).toHaveLength(2);
+    expect(html.match(/<li class="pd-row"/g)).toHaveLength(2);
+    expect(html).toContain('<span class="pd-row-meta">1.2.0</span>');
+    expect(html).toContain('<a class="pd-status" href="https://picodeck.net/download/">v0.1.0</a>');
   });
   it("shows an app's icon, and a monogram tile when it has none", () => {
     const withIcon = fixtureApp({ id: "com.example.withicon", icon: "https://raw.githubusercontent.com/example/picodeck-snake/v1.2.0/icon.png" });
     const html = renderIndexPage(fixtureCatalog([fixtureApp(), withIcon]));
-    expect(html).toContain('<img class="icon" src="https://raw.githubusercontent.com/example/picodeck-snake/v1.2.0/icon.png"');
-    expect(html).toContain('<span class="icon" aria-hidden="true">S</span>');
+    expect(html).toContain('<img class="pd-icon pd-c-games" src="https://raw.githubusercontent.com/example/picodeck-snake/v1.2.0/icon.png"');
+    expect(html).toContain('<span class="pd-icon pd-c-games" aria-hidden="true">S</span>');
   });
 
-  it("puts keywords in the card's search text and disables empty categories", () => {
+  it("puts keywords in the row's search text and disables empty categories", () => {
     const html = renderIndexPage(fixtureCatalog([fixtureApp({ keywords: ["arcade", "retro"] })]));
     expect(html).toMatch(/data-search="[^"]*arcade retro/);
     expect(html).toContain('data-cat="tools" aria-pressed="false" disabled');
-    expect(html).toContain('data-cat="games" aria-pressed="false">games<span class="n">1</span>');
+    expect(html).toContain('data-cat="games" aria-pressed="false"><span class="pd-dot"></span><span class="pd-tab-label">Games</span><span class="pd-count">1</span>');
+    expect(html).toContain('data-cat="all" aria-pressed="true"><span class="pd-tab-label">All</span>');
   });
 
   it("defaults the sort to recently updated", () => {

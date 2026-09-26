@@ -18,6 +18,15 @@ at https://store.picodeck.net.
 
 Setup, secrets and deployment: see the Operations section below.
 
+## Look
+
+The web pages link the shared PicoDeck stylesheet from the website repo,
+`https://picodeck.net/brand/v1/brand.css` (`BRAND` in `src/html/layout.ts`), and
+use its `pd-` classes; the inline CSS in `layout.ts` only arranges them. Style changes
+that should match the website go in that repo's `public/brand/v1/brand.css`, and a
+website deploy restyles the store. Deploy the website first when the store starts
+using a new `pd-` class.
+
 ## Operations
 
 ### One-time setup
