@@ -1,8 +1,8 @@
-# PicOS-Store
+# PicoDeck-Store
 
-Cloudflare Worker that indexes public GitHub repositories tagged `picos-app`
-into the catalog consumed by the PicOS App Store, and serves a web listing
-at https://picos.jeffory.dev.
+Cloudflare Worker that indexes public GitHub repositories tagged `picodeck-app`
+into the catalog consumed by the PicoDeck App Store, and serves a web listing
+at https://store.picodeck.net.
 
 - `GET /catalog.json` — catalog for the device
 - `GET /catalog-debug.json` — catalog plus rejected repos with reasons
@@ -23,8 +23,8 @@ Setup, secrets and deployment: see the Operations section below.
 ### One-time setup
 
     npx wrangler login
-    npx wrangler r2 bucket create picos-store
-    npx wrangler kv namespace create PICOS_STORE_KV   # paste id into wrangler.toml
+    npx wrangler r2 bucket create picodeck-store
+    npx wrangler kv namespace create STORE_KV   # paste id into wrangler.toml
     npx wrangler secret put GITHUB_TOKEN               # fine-grained PAT, public read
     npx wrangler secret put REFRESH_TOKEN              # any long random string
     npx wrangler deploy
@@ -39,26 +39,26 @@ CI deploys on every push to `main` using the `CLOUDFLARE_API_TOKEN` and
 ### Before the first public refresh
 
 Claims are first-come, first-served, so seed the first-party ids and dirnames
-before anyone else can index one. From a PicOS checkout:
+before anyone else can index one. From a PicoDeck checkout:
 
-    ./scripts/seed-claims.sh ~/Projects/PicOS --dry-run   # review
-    ./scripts/seed-claims.sh ~/Projects/PicOS
+    ./scripts/seed-claims.sh ~/Projects/PicoDeck/picodeck --dry-run   # review
+    ./scripts/seed-claims.sh ~/Projects/PicoDeck/picodeck
 
 It reads every `apps/*/app.json` and writes `claim:<id>` and
-`claim:dir:<dirname>` (dirname lower-cased) as `jeffory/picOS` into the remote namespace, skipping keys that
-already exist (an app that moved to its own repo keeps its own claim). The dirnames PicOS ships in the
+`claim:dir:<dirname>` (dirname lower-cased) as `PicoDeck/picodeck` into the remote namespace, skipping keys that
+already exist (an app that moved to its own repo keeps its own claim). The dirnames PicoDeck ships in the
 firmware image (`store`, `updater`, `filemanager`, `editor`,
 `terminal_example`, `calculator`, `system`, `data`) are refused outright for
-any repository other than `jeffory/picOS`, but ids and the remaining app
+any repository other than `PicoDeck/picodeck`, but ids and the remaining app
 dirnames are not reserved until they are claimed.
 
 ### Refresh now
 
-    curl -X POST -H "Authorization: Bearer $REFRESH_TOKEN" https://picos.jeffory.dev/refresh
+    curl -X POST -H "Authorization: Bearer $REFRESH_TOKEN" https://store.picodeck.net/refresh
 
 ### Delist a repository
 
-    npx wrangler kv key put --binding PICOS_STORE_KV "block:owner/name" 1
+    npx wrangler kv key put --binding STORE_KV "block:owner/name" 1
 
 Remove the key to relist. Takes effect on the next refresh.
 
@@ -70,10 +70,10 @@ An id claim lives at `claim:<id>`; a dirname claim lives at
 device before extracting and two repositories sharing one dirname would
 overwrite each other:
 
-    npx wrangler kv key get --binding PICOS_STORE_KV "claim:com.example.app"
-    npx wrangler kv key put --binding PICOS_STORE_KV "claim:com.example.app" "newowner/repo"
-    npx wrangler kv key get --binding PICOS_STORE_KV "claim:dir:example"
-    npx wrangler kv key put --binding PICOS_STORE_KV "claim:dir:example" "newowner/repo"
+    npx wrangler kv key get --binding STORE_KV "claim:com.example.app"
+    npx wrangler kv key put --binding STORE_KV "claim:com.example.app" "newowner/repo"
+    npx wrangler kv key get --binding STORE_KV "claim:dir:example"
+    npx wrangler kv key put --binding STORE_KV "claim:dir:example" "newowner/repo"
 
 Deleting a claim key releases it to whoever is indexed next. A repository
 rejected for a claim it should own appears on `/status` as
@@ -87,8 +87,8 @@ instead, which is the only way to see the id the cron actually used (the
 scheduled run reads assets over GraphQL, whose node ids look like
 `RA_kwDO...`, not the numeric REST ids):
 
-    npx wrangler kv key list --binding PICOS_STORE_KV --prefix "sha:owner/name@"
-    npx wrangler kv key delete --binding PICOS_STORE_KV "sha:owner/name@v1.0.0:<asset id>"
+    npx wrangler kv key list --binding STORE_KV --prefix "sha:owner/name@"
+    npx wrangler kv key delete --binding STORE_KV "sha:owner/name@v1.0.0:<asset id>"
 
 The REST ids, if you want to cross-check a release, come from the API:
 

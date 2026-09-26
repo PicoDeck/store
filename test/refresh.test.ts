@@ -8,7 +8,7 @@ import type { Env } from "../src/types";
 interface FakeRepo { owner: string; name: string; stars?: number; tag?: string | null; appJson?: string | null; zip?: ArrayBuffer; zipName?: string; }
 
 function env(kv = new FakeKV(), r2 = new FakeR2()): { env: Env; kv: FakeKV; r2: FakeR2 } {
-  return { env: { PICOS_STORE_KV: kv as never, PICOS_STORE_BUCKET: r2 as never, GITHUB_TOKEN: "tok" }, kv, r2 };
+  return { env: { STORE_KV: kv as never, STORE_BUCKET: r2 as never, GITHUB_TOKEN: "tok" }, kv, r2 };
 }
 
 const zipFor = (id: string) => buildZip([{ name: "app.json", data: JSON.stringify({ id }) }, { name: "main.lua", data: "" }]);
@@ -38,8 +38,8 @@ function github(repos: FakeRepo[], firmware: boolean = true) {
       }
       return json({ data });
     },
-    "GET api.github.com/repos/jeffory/picOS/releases/latest": () => firmware
-      ? json({ tag_name: "v0.1.0", body: "notes {x}", assets: [{ id: 1, name: "picocalc_os.bin", size: 2048, browser_download_url: "u" }, { id: 2, name: "picocalc_os.sha256", size: 65, browser_download_url: "u" }] })
+    "GET api.github.com/repos/PicoDeck/picodeck/releases/latest": () => firmware
+      ? json({ tag_name: "v0.1.0", body: "notes {x}", assets: [{ id: 1, name: "picodeck.bin", size: 2048, browser_download_url: "u" }, { id: 2, name: "picodeck.sha256", size: 65, browser_download_url: "u" }] })
       : json({}, 500),
   };
   for (const r of repos) {
@@ -60,7 +60,7 @@ describe("refresh", () => {
     expect(cat.apps[0].sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(cat.apps[0].release_tag).toBe("v1");
     expect(cat.apps[0].asset).toBe("tetris.zip");
-    expect(cat.firmware).toEqual({ version: "0.1.0", repo: "jeffory/picOS", release_tag: "v0.1.0", changelog: "notes (x)", size_kb: 2 });
+    expect(cat.firmware).toEqual({ version: "0.1.0", repo: "PicoDeck/picodeck", release_tag: "v0.1.0", changelog: "notes (x)", size_kb: 2 });
     expect(r2.store.get(CATALOG_KEY)!.cacheControl).toBe("public, max-age=300, s-maxage=1800, stale-while-revalidate=3600");
     expect(JSON.parse(r2.store.get(DEBUG_KEY)!.body).rejected).toEqual([]);
   });
@@ -237,7 +237,7 @@ describe("refresh", () => {
     }
     const kv = new FakeKV();
     const r2 = new ThrowOnceR2();
-    const e: Env = { PICOS_STORE_KV: kv as never, PICOS_STORE_BUCKET: r2 as never, GITHUB_TOKEN: "tok" };
+    const e: Env = { STORE_KV: kv as never, STORE_BUCKET: r2 as never, GITHUB_TOKEN: "tok" };
     const { fetch } = github([{ owner: "a", name: "app" }]);
 
     const failed = await refresh(e, { fetch });

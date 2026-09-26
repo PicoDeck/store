@@ -161,22 +161,28 @@ describe("fetchAppJson", () => {
 describe("fetchFirmwareRelease", () => {
   it("returns tag, body and assets", async () => {
     const { fetch } = routeFetch({
-      "GET api.github.com/repos/jeffory/picOS/releases/latest": () =>
-        json({ tag_name: "v0.1.0", body: "notes", assets: [{ id: 5, name: "picocalc_os.bin", size: 1000, browser_download_url: "https://github.com/jeffory/picOS/releases/download/v0.1.0/picocalc_os.bin" }] }),
+      "GET api.github.com/repos/PicoDeck/picodeck/releases/latest": () =>
+        json({ tag_name: "v0.1.0", body: "notes", assets: [{ id: 5, name: "picodeck.bin", size: 1000, browser_download_url: "https://github.com/PicoDeck/picodeck/releases/download/v0.1.0/picodeck.bin" }] }),
     });
-    const r = await createGitHubClient(fetch, "tok").fetchFirmwareRelease("jeffory/picOS");
-    expect(r).toEqual({ ok: true, value: { tagName: "v0.1.0", body: "notes", assets: [{ id: "5", name: "picocalc_os.bin", size: 1000, downloadUrl: "https://github.com/jeffory/picOS/releases/download/v0.1.0/picocalc_os.bin" }] } });
+    const r = await createGitHubClient(fetch, "tok").fetchFirmwareRelease("PicoDeck/picodeck");
+    expect(r).toEqual({ ok: true, value: { tagName: "v0.1.0", body: "notes", assets: [{ id: "5", name: "picodeck.bin", size: 1000, downloadUrl: "https://github.com/PicoDeck/picodeck/releases/download/v0.1.0/picodeck.bin" }] } });
   });
   it("reports failure without throwing", async () => {
-    const { fetch } = routeFetch({ "GET api.github.com/repos/jeffory/picOS/releases/latest": () => json({}, 404) });
-    expect(await createGitHubClient(fetch, "tok").fetchFirmwareRelease("jeffory/picOS")).toEqual({ ok: false, error: "github 404" });
+    const { fetch } = routeFetch({ "GET api.github.com/repos/PicoDeck/picodeck/releases/latest": () => json({}, 404) });
+    expect(await createGitHubClient(fetch, "tok").fetchFirmwareRelease("PicoDeck/picodeck")).toEqual({ ok: false, error: "github 404" });
   });
   it("absorbs a transport-level failure instead of rejecting", async () => {
     const { fetch } = routeFetch({
-      "GET api.github.com/repos/jeffory/picOS/releases/latest": () => { throw new TypeError("fetch failed"); },
+      "GET api.github.com/repos/PicoDeck/picodeck/releases/latest": () => { throw new TypeError("fetch failed"); },
     });
-    await expect(createGitHubClient(fetch, "tok").fetchFirmwareRelease("jeffory/picOS")).resolves.toEqual({
+    await expect(createGitHubClient(fetch, "tok").fetchFirmwareRelease("PicoDeck/picodeck")).resolves.toEqual({
       ok: false, error: "github-unreachable: TypeError",
     });
+  });
+});
+
+describe("SEARCH_QUERY", () => {
+  it("indexes the picodeck-app topic", () => {
+    expect(SEARCH_QUERY).toBe("topic:picodeck-app is:public archived:false fork:false");
   });
 });

@@ -39,7 +39,7 @@ describe("emitCatalog", () => {
     const json = emitCatalog(fixtureCatalog());
     const parsed = luaParseCatalog(json);
     expect(parsed.catalog_version).toBe(1);
-    expect(parsed.firmware).toEqual({ version: "0.1.0", repo: "jeffory/picOS", release_tag: "v0.1.0", changelog: "Fonts (and) more", size_kb: 1210 });
+    expect(parsed.firmware).toEqual({ version: "0.1.0", repo: "PicoDeck/picodeck", release_tag: "v0.1.0", changelog: "Fonts (and) more", size_kb: 1210 });
     expect(parsed.apps).toHaveLength(1);
     const a = parsed.apps[0];
     expect(a.id).toBe("com.example.snake");

@@ -82,7 +82,7 @@ export async function digestAsset(
   const timer = setTimeout(() => ctrl.abort(), DOWNLOAD_TIMEOUT_MS);
   let buf: ArrayBuffer;
   try {
-    const res = await fetchFn(asset.downloadUrl, { redirect: "follow", signal: ctrl.signal, headers: { "User-Agent": "picos-store" } });
+    const res = await fetchFn(asset.downloadUrl, { redirect: "follow", signal: ctrl.signal, headers: { "User-Agent": "picodeck-store" } });
     if (!res.ok) return { transient: `asset-unreachable:${res.status}` };
     const len = Number(res.headers.get("Content-Length") ?? "0");
     if (len > MAX_ASSET_BYTES) return { transient: "asset-too-large" };

@@ -24,7 +24,7 @@ function html(body: string, status = 200): Response {
 }
 
 async function readSnapshot(env: Env, key: string): Promise<{ text: string; etag: string } | null> {
-  const obj = await env.PICOS_STORE_BUCKET.get(key);
+  const obj = await env.STORE_BUCKET.get(key);
   if (!obj) return null;
   return { text: await obj.text(), etag: obj.httpEtag };
 }
@@ -116,7 +116,7 @@ export default {
     // Throwing marks the cron invocation failed, so a broken refresh is visible in Workers observability.
     ctx.waitUntil((async () => {
       const result = await (deps.refresh ?? realRefresh)(env);
-      if (!result.ok) throw new Error(`picos-store refresh failed: ${result.error}`);
+      if (!result.ok) throw new Error(`picodeck-store refresh failed: ${result.error}`);
     })());
   },
 };

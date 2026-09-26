@@ -12,10 +12,10 @@ function env(withCatalog = true) {
     void r2.put(CATALOG_KEY, emitCatalog(fixtureCatalog()), { httpMetadata: { contentType: "application/json; charset=utf-8" } });
     void r2.put(DEBUG_KEY, emitDebugCatalog(fixtureCatalog(), { rejected: [{ repo: "a/b", reason: "no-release" }], warnings: [] }));
   }
-  const e: Env = { PICOS_STORE_BUCKET: r2 as never, PICOS_STORE_KV: kv as never, GITHUB_TOKEN: "t", REFRESH_TOKEN: "secret" };
+  const e: Env = { STORE_BUCKET: r2 as never, STORE_KV: kv as never, GITHUB_TOKEN: "t", REFRESH_TOKEN: "secret" };
   return { e, r2 };
 }
-const get = (path: string, e: Env, headers: Record<string, string> = {}) => handleRequest(new Request(`https://picos.jeffory.dev${path}`, { headers }), e);
+const get = (path: string, e: Env, headers: Record<string, string> = {}) => handleRequest(new Request(`https://store.picodeck.net${path}`, { headers }), e);
 
 describe("API routes", () => {
   it("serves catalog.json from R2 with cache headers and etag", async () => {
@@ -84,13 +84,13 @@ describe("HTML routes", () => {
 describe("POST /refresh", () => {
   it("requires the bearer token", async () => {
     const { e } = env();
-    const res = await handleRequest(new Request("https://picos.jeffory.dev/refresh", { method: "POST" }), e);
+    const res = await handleRequest(new Request("https://store.picodeck.net/refresh", { method: "POST" }), e);
     expect(res.status).toBe(401);
   });
   it("runs refresh and returns its result", async () => {
     const { e } = env();
     const fake = vi.fn().mockResolvedValue({ ok: true, appCount: 3, rejected: [], warnings: [], generatedAt: "x" });
-    const res = await handleRequest(new Request("https://picos.jeffory.dev/refresh", { method: "POST", headers: { Authorization: "Bearer secret" } }), e, { refresh: fake });
+    const res = await handleRequest(new Request("https://store.picodeck.net/refresh", { method: "POST", headers: { Authorization: "Bearer secret" } }), e, { refresh: fake });
     expect(res.status).toBe(200);
     expect(fake).toHaveBeenCalledWith(e);
     expect(await res.json()).toMatchObject({ ok: true, appCount: 3 });
@@ -98,7 +98,7 @@ describe("POST /refresh", () => {
   it("returns 500 when refresh fails", async () => {
     const { e } = env();
     const fake = vi.fn().mockResolvedValue({ ok: false, error: "boom" });
-    const res = await handleRequest(new Request("https://picos.jeffory.dev/refresh", { method: "POST", headers: { Authorization: "Bearer secret" } }), e, { refresh: fake });
+    const res = await handleRequest(new Request("https://store.picodeck.net/refresh", { method: "POST", headers: { Authorization: "Bearer secret" } }), e, { refresh: fake });
     expect(res.status).toBe(500);
   });
 });
@@ -109,7 +109,7 @@ describe("page routes read catalog.json, not the debug snapshot", () => {
     const r2 = new FakeR2(), kv = new FakeKV();
     void r2.put(CATALOG_KEY, emitCatalog(fixtureCatalog()));
     void r2.put(DEBUG_KEY, emitDebugCatalog({ ...fixtureCatalog(), apps: [] }, { rejected: [{ repo: "a/b", reason: "no-release" }], warnings: ["w"] }));
-    const e: Env = { PICOS_STORE_BUCKET: r2 as never, PICOS_STORE_KV: kv as never };
+    const e: Env = { STORE_BUCKET: r2 as never, STORE_KV: kv as never };
     return { e, r2 };
   }
   it("lists the app from the catalog even when the debug file has none", async () => {
@@ -135,14 +135,14 @@ describe("page routes read catalog.json, not the debug snapshot", () => {
   it("reports rejected: null when the debug file is missing", async () => {
     const r2 = new FakeR2(), kv = new FakeKV();
     void r2.put(CATALOG_KEY, emitCatalog(fixtureCatalog()));
-    const e: Env = { PICOS_STORE_BUCKET: r2 as never, PICOS_STORE_KV: kv as never };
+    const e: Env = { STORE_BUCKET: r2 as never, STORE_KV: kv as never };
     expect(await (await get("/health", e)).json()).toEqual({ ok: true, generatedAt: "2026-09-15T10:00:00Z", apps: 1, rejected: null });
     expect((await get("/", e)).status).toBe(200);
   });
   it("503s /status when only the debug file is missing", async () => {
     const r2 = new FakeR2(), kv = new FakeKV();
     void r2.put(CATALOG_KEY, emitCatalog(fixtureCatalog()));
-    const e: Env = { PICOS_STORE_BUCKET: r2 as never, PICOS_STORE_KV: kv as never };
+    const e: Env = { STORE_BUCKET: r2 as never, STORE_KV: kv as never };
     expect((await get("/status", e)).status).toBe(503);
   });
 });
@@ -151,7 +151,7 @@ describe("unexpected failures", () => {
   it("returns 500 with no-store and no detail when a snapshot cannot be parsed", async () => {
     const r2 = new FakeR2(), kv = new FakeKV();
     void r2.put(CATALOG_KEY, "{not json");
-    const e: Env = { PICOS_STORE_BUCKET: r2 as never, PICOS_STORE_KV: kv as never };
+    const e: Env = { STORE_BUCKET: r2 as never, STORE_KV: kv as never };
     const res = await get("/", e);
     expect(res.status).toBe(500);
     expect(res.headers.get("Cache-Control")).toBe("no-store");
@@ -174,6 +174,6 @@ describe("scheduled", () => {
     const fake = vi.fn().mockResolvedValue({ ok: false, error: "boom" });
     const waited: Promise<unknown>[] = [];
     worker.scheduled({} as never, e, { waitUntil: (p: Promise<unknown>) => waited.push(p) } as never, { refresh: fake });
-    await expect(waited[0]).rejects.toThrow(/picos-store refresh failed: boom/);
+    await expect(waited[0]).rejects.toThrow(/picodeck-store refresh failed: boom/);
   });
 });

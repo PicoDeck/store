@@ -6,7 +6,7 @@ import { emitCatalog, emitDebugCatalog, type Catalog, type CatalogApp, type Firm
 
 export const CATALOG_KEY = "catalog.json";
 export const DEBUG_KEY = "catalog-debug.json";
-export const FIRMWARE_REPO = "jeffory/picOS";
+export const FIRMWARE_REPO = "PicoDeck/picodeck";
 export const CATALOG_CACHE_CONTROL = "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600";
 
 export type RefreshResult =
@@ -29,7 +29,7 @@ export async function refresh(env: Env, options: RefreshOptions = {}): Promise<R
     if (search.truncated) warnings.push(`GitHub returned ${search.totalCount} results; only ${search.repos.length} were collected.`);
 
     const { apps, rejected, claims } = await collectApps(env, gh, fetchFn, search.repos, warnings);
-    if (apps.length === 0 && rejected.length === 0) throw new Error("GitHub returned no repositories tagged picos-app");
+    if (apps.length === 0 && rejected.length === 0) throw new Error("GitHub returned no repositories tagged picodeck-app");
 
     const firmware = await loadFirmware(gh, warnings);
     const catalog: Catalog = { generated_at: now.toISOString(), firmware, apps };
@@ -37,27 +37,27 @@ export async function refresh(env: Env, options: RefreshOptions = {}): Promise<R
 
     let writeCatalog = true;
     if (apps.length === 0) {
-      const existing = await env.PICOS_STORE_BUCKET.head(CATALOG_KEY);
+      const existing = await env.STORE_BUCKET.head(CATALOG_KEY);
       if (existing) {
         writeCatalog = false;
         warnings.push("empty-result: previous catalog retained");
       }
     }
 
-    if (writeCatalog) await env.PICOS_STORE_BUCKET.put(CATALOG_KEY, emitCatalog(catalog), meta);
-    await env.PICOS_STORE_BUCKET.put(DEBUG_KEY, emitDebugCatalog(catalog, { rejected, warnings }), meta);
-    for (const claim of claims) await env.PICOS_STORE_KV.put(claim.key, claim.owner);
+    if (writeCatalog) await env.STORE_BUCKET.put(CATALOG_KEY, emitCatalog(catalog), meta);
+    await env.STORE_BUCKET.put(DEBUG_KEY, emitDebugCatalog(catalog, { rejected, warnings }), meta);
+    for (const claim of claims) await env.STORE_KV.put(claim.key, claim.owner);
     return { ok: true, appCount: apps.length, rejected, warnings, generatedAt: catalog.generated_at };
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown refresh error";
-    logger.error(`picos-store refresh failed: ${message}`);
+    logger.error(`picodeck-store refresh failed: ${message}`);
     return { ok: false, error: message };
   }
 }
 
 async function collectApps(env: Env, gh: GitHubClient, fetchFn: typeof fetch, repos: RepoSummary[], warnings: string[]) {
   const rejected: Rejection[] = [];
-  const blocked = await listKeys(env.PICOS_STORE_KV, "block:");
+  const blocked = await listKeys(env.STORE_KV, "block:");
   const candidates = repos.filter((r) => {
     if (blocked.has(r.fullName.toLowerCase())) { rejected.push({ repo: r.fullName, reason: "blocked" }); return false; }
     return true;
@@ -81,7 +81,7 @@ async function collectApps(env: Env, gh: GitHubClient, fetchFn: typeof fetch, re
   for (const app of validated) {
     try {
       const claimKey = `claim:${app.manifest.id}`;
-      const existingOwner = await env.PICOS_STORE_KV.get(claimKey);
+      const existingOwner = await env.STORE_KV.get(claimKey);
       const owner = existingOwner ?? pendingOwners.get(claimKey) ?? null;
       if (owner && owner !== app.repo.fullName) { rejected.push({ repo: app.repo.fullName, reason: `id-claimed-by:${owner}` }); continue; }
 
@@ -89,12 +89,12 @@ async function collectApps(env: Env, gh: GitHubClient, fetchFn: typeof fetch, re
       // The device's FAT32 filesystem is case-insensitive, so the claim key is lower-cased to match
       // (the emitted catalog dirname keeps the author's original spelling).
       const dirKey = `claim:dir:${app.manifest.dirname.toLowerCase()}`;
-      const existingDirOwner = await env.PICOS_STORE_KV.get(dirKey);
+      const existingDirOwner = await env.STORE_KV.get(dirKey);
       const dirOwner = existingDirOwner ?? pendingOwners.get(dirKey) ?? null;
       if (dirOwner && dirOwner !== app.repo.fullName) { rejected.push({ repo: app.repo.fullName, reason: `dirname-claimed-by:${dirOwner}` }); continue; }
 
       const key = digestKey(app.repo.fullName, app.release.tagName, app.asset.id);
-      const outcome = await digestAsset(env.PICOS_STORE_KV, fetchFn, key, app.asset, budget, app.manifest.id);
+      const outcome = await digestAsset(env.STORE_KV, fetchFn, key, app.asset, budget, app.manifest.id);
       if (outcome === "pending") { rejected.push({ repo: app.repo.fullName, reason: "pending-digest" }); continue; }
       if ("transient" in outcome) { rejected.push({ repo: app.repo.fullName, reason: outcome.transient }); continue; }
       if ("rejected" in outcome) { rejected.push({ repo: app.repo.fullName, reason: outcome.rejected }); continue; }
@@ -123,9 +123,9 @@ async function collectApps(env: Env, gh: GitHubClient, fetchFn: typeof fetch, re
 async function loadFirmware(gh: GitHubClient, warnings: string[]): Promise<Firmware | null> {
   const r = await gh.fetchFirmwareRelease(FIRMWARE_REPO);
   if (!r.ok) { warnings.push(`firmware: ${r.error}`); return null; }
-  const bin = r.value.assets.find((a) => a.name === "picocalc_os.bin");
-  const sha = r.value.assets.find((a) => a.name === "picocalc_os.sha256");
-  if (!bin || !sha) { warnings.push("firmware: release is missing picocalc_os.bin or picocalc_os.sha256"); return null; }
+  const bin = r.value.assets.find((a) => a.name === "picodeck.bin");
+  const sha = r.value.assets.find((a) => a.name === "picodeck.sha256");
+  if (!bin || !sha) { warnings.push("firmware: release is missing picodeck.bin or picodeck.sha256"); return null; }
   return {
     version: r.value.tagName.replace(/^v/, ""), repo: FIRMWARE_REPO, release_tag: r.value.tagName,
     changelog: r.value.body.slice(0, 500), size_kb: Math.ceil(bin.size / 1024),

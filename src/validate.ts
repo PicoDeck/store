@@ -9,7 +9,7 @@ export const MAX_ASSET_BYTES = 16 * 1024 * 1024;
 /** Directories the store itself owns on the device; a third party claiming one would overwrite them. */
 export const RESERVED_DIRNAMES = new Set(["store", "updater", "filemanager", "editor", "terminal_example", "calculator", "system", "data", ".staging"]);
 /** The first-party repository, allowed to publish the reserved dirnames above. */
-export const FIRST_PARTY_REPO = "jeffory/picOS";
+export const FIRST_PARTY_REPO = "PicoDeck/picodeck";
 
 /** Field caps applied at ingest so no author string can grow a KV key, a reason or the catalog without bound. */
 const VERSION_MAX = 40, ASSET_MAX = 100, REQUIREMENT_MAX = 40, REASON_MAX = 60;

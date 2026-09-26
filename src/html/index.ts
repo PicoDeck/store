@@ -59,7 +59,7 @@ export function renderIndexPage(catalog: Catalog): string {
 <select id="sort" aria-label="Sort"><option value="pushed">Recently updated</option><option value="stars">Most stars</option><option value="name">Name</option></select></div>
 <div class="cats">${cats}</div>
 <div class="grid" id="grid">${catalog.apps.map(card).join("\n")}</div>
-<div class="empty" id="empty"${catalog.apps.length ? " hidden" : ""}>${catalog.apps.length ? `<strong>No apps match</strong><span id="emptymsg">No apps in this category yet.</span><br><button type="button" id="reset">Show all apps</button>` : `<strong>No apps listed yet</strong>Be the first: tag a repository with <code>picos-app</code>.`}</div>
-<div class="panel notice"><strong>Get your app listed.</strong> Tag a public GitHub repo with <code>picos-app</code>, add an <code>app.json</code> and a Release with one ZIP. <a href="/publish">Read the publishing guide</a>.</div>`;
-  return renderPage({ title: "PicOS App Store", description: "Apps for the ClockworkPi PicoCalc running PicOS", body, script: SCRIPT, path: "/" });
+<div class="empty" id="empty"${catalog.apps.length ? " hidden" : ""}>${catalog.apps.length ? `<strong>No apps match</strong><span id="emptymsg">No apps in this category yet.</span><br><button type="button" id="reset">Show all apps</button>` : `<strong>No apps listed yet</strong>Be the first: tag a repository with <code>picodeck-app</code>.`}</div>
+<div class="panel notice"><strong>Get your app listed.</strong> Tag a public GitHub repo with <code>picodeck-app</code>, add an <code>app.json</code> and a Release with one ZIP. <a href="/publish">Read the publishing guide</a>.</div>`;
+  return renderPage({ title: "PicoDeck App Store", description: "Apps for the ClockworkPi PicoCalc running PicoDeck", body, script: SCRIPT, path: "/" });
 }

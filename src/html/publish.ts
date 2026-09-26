@@ -4,10 +4,10 @@ export function renderPublishPage(): string {
   const body = `
 <div class="prose">
 <div class="page-head"><h2>Publish an app</h2><p class="meta">Four steps, no sign-up</p></div>
-<p>The store is an automatic index of public GitHub repositories. There is no registration and no review queue; listing means a repository tagged itself, not that PicOS vetted it.</p>
+<p>The store is an automatic index of public GitHub repositories. There is no registration and no review queue; listing means a repository tagged itself, not that PicoDeck vetted it.</p>
 <ol>
 <li>Push your app to a <strong>public</strong> GitHub repository (not a fork) with <code>app.json</code> at the root.</li>
-<li>Add the repository topic <code>picos-app</code> (Settings → Topics on GitHub).</li>
+<li>Add the repository topic <code>picodeck-app</code> (Settings → Topics on GitHub).</li>
 <li>Create a GitHub Release with exactly one <code>.zip</code> asset containing your app files at the archive root.</li>
 <li>Wait up to 30 minutes, then check <a href="/status">status</a> if it is not listed.</li>
 </ol>
@@ -56,7 +56,7 @@ export function renderPublishPage(): string {
 <dt><code>id-mismatch:&lt;id&gt;</code></dt><dd>The ZIP's id differs from the repository's.</dd>
 <dt><code>id-claimed-by:&lt;repo&gt;</code></dt><dd>Another repository already publishes this id.</dd>
 <dt><code>dirname-claimed-by:&lt;repo&gt;</code></dt><dd>Another repository already publishes this <code>dirname</code>. The store installs into <code>/apps/&lt;dirname&gt;</code> and clears it first, so a dirname belongs to one repository. Set a different <code>dirname</code> in <code>app.json</code>.</dd>
-<dt><code>dirname-reserved</code></dt><dd>The <code>dirname</code> is one PicOS itself ships: <code>store</code>, <code>updater</code>, <code>filemanager</code>, <code>editor</code>, <code>terminal_example</code>, <code>calculator</code>, <code>system</code>, <code>data</code>. Pick another.</dd>
+<dt><code>dirname-reserved</code></dt><dd>The <code>dirname</code> is one PicoDeck itself ships: <code>store</code>, <code>updater</code>, <code>filemanager</code>, <code>editor</code>, <code>terminal_example</code>, <code>calculator</code>, <code>system</code>, <code>data</code>. Pick another.</dd>
 <dt><code>pending-digest</code></dt><dd>New release queued for hashing; it will appear on a later refresh.</dd>
 <dt><code>asset-unreachable:&lt;status|error&gt;</code></dt><dd>The ZIP could not be downloaded — an HTTP status, or the name of the network error; retried next refresh.</dd>
 <dt><code>digest-error:&lt;name&gt;</code></dt><dd>The index hit an unexpected error while reading the ZIP; it will retry on the next refresh.</dd>
@@ -66,5 +66,5 @@ export function renderPublishPage(): string {
 <h3>Updating</h3>
 <p>Bump <code>version</code> in <code>app.json</code>, tag a new Release with a new ZIP. Devices see the update on their next catalog fetch. Removing the topic delists the app on the next refresh.</p>
 </div>`;
-  return renderPage({ title: "Publish · PicOS App Store", description: "How to list an app in the PicOS App Store", body, path: "/publish", script: "if(matchMedia('(min-width:641px)').matches)document.getElementById('reasons').open=true;" });
+  return renderPage({ title: "Publish · PicoDeck App Store", description: "How to list an app in the PicoDeck App Store", body, path: "/publish", script: "if(matchMedia('(min-width:641px)').matches)document.getElementById('reasons').open=true;" });
 }

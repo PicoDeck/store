@@ -147,7 +147,7 @@ describe("validateRepo bounds every author-controlled string", () => {
     expect(`claim:${id}`.length).toBeLessThan(512);
   });
   it("lets the first-party repo use a reserved dirname", () => {
-    const firstParty = { ...repo, fullName: "jeffory/picOS", owner: "jeffory", name: "picOS" };
+    const firstParty = { ...repo, fullName: "PicoDeck/picodeck", owner: "jeffory", name: "picodeck" };
     const r = validateRepo(firstParty, rel(), manifest({ dirname: "store" }));
     expect(r.ok && r.app.manifest.dirname).toBe("store");
   });

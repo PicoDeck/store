@@ -39,5 +39,5 @@ ${a.keywords.length ? `<dt>Keywords</dt><dd>${a.keywords.map(e).join(", ")}</dd>
 <div class="hashbox"><code class="hash">${e(a.sha256)}</code><button id="copy" class="copy" type="button" data-hash="${e(a.sha256)}" hidden>Copy</button></div>
 </div>
 </div>`;
-  return renderPage({ title: `${a.name} · PicOS App Store`, description: a.description, body, script: SCRIPT, path: "/" });
+  return renderPage({ title: `${a.name} · PicoDeck App Store`, description: a.description, body, script: SCRIPT, path: "/" });
 }

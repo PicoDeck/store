@@ -1,17 +1,17 @@
-name = "picos-store"
+name = "picodeck-store"
 main = "src/index.ts"
 compatibility_date = "2026-09-01"
 workers_dev = false
 
-routes = [{ pattern = "picos.jeffory.dev", custom_domain = true }]
+routes = [{ pattern = "store.picodeck.net", custom_domain = true }]
 
 [[r2_buckets]]
-binding = "PICOS_STORE_BUCKET"
-bucket_name = "picos-store"
+binding = "STORE_BUCKET"
+bucket_name = "picodeck-store"
 
 [[kv_namespaces]]
-binding = "PICOS_STORE_KV"
-id = "ac57dbbf6a174eee81a32c922b46ebef"
+binding = "STORE_KV"
+id = "1518855e23594d3ea3db8703f51c8ccf"
 
 [triggers]
 crons = ["*/30 * * * *"]

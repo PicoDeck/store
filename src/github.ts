@@ -1,4 +1,4 @@
-export const SEARCH_QUERY = "topic:picos-app is:public archived:false fork:false";
+export const SEARCH_QUERY = "topic:picodeck-app is:public archived:false fork:false";
 const SEARCH_URL = "https://api.github.com/search/repositories";
 const GRAPHQL_URL = "https://api.github.com/graphql";
 const API_VERSION = "2022-11-28";
@@ -30,7 +30,7 @@ export function createGitHubClient(fetchFn: typeof fetch, token: string): GitHub
   const headers = {
     Accept: "application/vnd.github+json",
     Authorization: `Bearer ${token}`,
-    "User-Agent": "picos-store",
+    "User-Agent": "picodeck-store",
     "X-GitHub-Api-Version": API_VERSION,
   };
 

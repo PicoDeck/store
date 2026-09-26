@@ -100,11 +100,11 @@ export function renderPage(opts: { title: string; description: string; body: str
 <body>
 <div class="wrap">
 <header>
-<h1><a href="/" style="color:inherit;text-decoration:none">PicOS App Store</a></h1>
+<h1><a href="/" style="color:inherit;text-decoration:none">PicoDeck App Store</a></h1>
 <nav aria-label="Site">${nav}</nav>
 </header>
 ${opts.body}
-<footer><span>PicOS App Store · an automatic index of GitHub repositories tagged <code>picos-app</code></span><span><a href="/publish">Publishing guide</a><a href="/catalog.json">Catalog JSON</a><a href="https://github.com/jeffory/PicOS">PicOS on GitHub</a></span></footer>
+<footer><span>PicoDeck App Store · an automatic index of GitHub repositories tagged <code>picodeck-app</code></span><span><a href="/publish">Publishing guide</a><a href="/catalog.json">Catalog JSON</a><a href="https://picodeck.net">picodeck.net</a><a href="https://github.com/PicoDeck/picodeck">PicoDeck on GitHub</a></span></footer>
 </div>
 ${opts.script ? `<script>${opts.script}</script>` : ""}
 </body>

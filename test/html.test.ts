@@ -64,7 +64,7 @@ describe("renderIndexPage", () => {
     expect(html).not.toContain("<script>alert");
     expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;&quot;");
     expect(html).toContain('href="/apps/com.example.snake"');
-    expect(html).toContain('href="https://github.com/example/picos-snake/releases/download/v1.2.0/snake.zip"');
+    expect(html).toContain('href="https://github.com/example/picodeck-snake/releases/download/v1.2.0/snake.zip"');
     expect(html).toContain('data-category="games"');
     expect(html).toContain('data-stars="17"');
     expect(html).toContain("Firmware 0.1.0");
@@ -74,9 +74,9 @@ describe("renderIndexPage", () => {
     expect(html.match(/class="card"/g)).toHaveLength(2);
   });
   it("shows an app's icon, and a monogram tile when it has none", () => {
-    const withIcon = fixtureApp({ id: "com.example.withicon", icon: "https://raw.githubusercontent.com/example/picos-snake/v1.2.0/icon.png" });
+    const withIcon = fixtureApp({ id: "com.example.withicon", icon: "https://raw.githubusercontent.com/example/picodeck-snake/v1.2.0/icon.png" });
     const html = renderIndexPage(fixtureCatalog([fixtureApp(), withIcon]));
-    expect(html).toContain('<img class="icon" src="https://raw.githubusercontent.com/example/picos-snake/v1.2.0/icon.png"');
+    expect(html).toContain('<img class="icon" src="https://raw.githubusercontent.com/example/picodeck-snake/v1.2.0/icon.png"');
     expect(html).toContain('<span class="icon" aria-hidden="true">S</span>');
   });
 
@@ -107,9 +107,9 @@ describe("renderAppPage", () => {
     expect(html).toContain("v1.2.0");
   });
   it("renders screenshots and keywords when the manifest has them", () => {
-    const app = fixtureApp({ screenshots: ["https://raw.githubusercontent.com/example/picos-snake/v1.2.0/shot.png"], keywords: ["arcade"] });
+    const app = fixtureApp({ screenshots: ["https://raw.githubusercontent.com/example/picodeck-snake/v1.2.0/shot.png"], keywords: ["arcade"] });
     const html = renderAppPage(app, fixtureCatalog([app]));
-    expect(html).toContain('<div class="shots"><img src="https://raw.githubusercontent.com/example/picos-snake/v1.2.0/shot.png" alt="Screenshot of Snake"');
+    expect(html).toContain('<div class="shots"><img src="https://raw.githubusercontent.com/example/picodeck-snake/v1.2.0/shot.png" alt="Screenshot of Snake"');
     expect(html).toContain("<dt>Keywords</dt><dd>arcade</dd>");
   });
 
@@ -145,7 +145,7 @@ describe("renderStatusPage", () => {
 describe("renderPublishPage", () => {
   it("documents the topic and rules", () => {
     const html = renderPublishPage();
-    expect(html).toContain("picos-app");
+    expect(html).toContain("picodeck-app");
     expect(html).toContain("app.json");
     expect(html).toContain("16 MB");
     expect(html).toContain("30 minutes");
@@ -162,5 +162,14 @@ describe("renderPublishPage", () => {
     expect(html).toContain("dirname-claimed-by:&lt;repo&gt;");
     expect(html).toContain("dirname-reserved");
     expect(html).toContain("asset-unreachable:&lt;status|error&gt;");
+  });
+});
+
+describe("site footer", () => {
+  it("links to picodeck.net and the PicoDeck repo", () => {
+    const html = renderPage({ title: "t", description: "d", body: "" });
+    expect(html).toContain('href="https://picodeck.net"');
+    expect(html).toContain('href="https://github.com/PicoDeck/picodeck"');
+    expect(html).toContain("PicoDeck App Store");
   });
 });
