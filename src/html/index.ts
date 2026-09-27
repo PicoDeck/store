@@ -9,12 +9,13 @@ export function formatSize(kb: number): string {
   return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`;
 }
 
-/** The app's own icon, or a monogram tile in its category colour, like the launcher draws. */
+/** The app's own icon, or the launcher's cartridge placeholder (brand.css .pd-cart)
+ *  in its category colour with the upper-cased initial, as the device draws it. */
 export function iconMarkup(a: CatalogApp, extraClass = ""): string {
   const cls = `pd-icon pd-c-${a.category}${extraClass ? " " + extraClass : ""}`;
   if (a.icon) return `<img class="${cls}" src="${e(a.icon)}" alt="" loading="lazy">`;
-  const letter = a.name.trim()[0] ?? "?"; // as-is, like the launcher ("b" for block.exe)
-  return `<span class="${cls}" aria-hidden="true">${e(letter)}</span>`;
+  const letter = (a.name.trim()[0] ?? "?").toUpperCase();
+  return `<span class="${cls} pd-cart" aria-hidden="true">${e(letter)}</span>`;
 }
 
 export const CATEGORY_NAMES: Record<string, string> = {

@@ -94,11 +94,13 @@ describe("renderIndexPage", () => {
     expect(html).toContain('<span class="pd-row-meta">1.2.0</span>');
     expect(html).toContain('<a class="pd-status" href="https://picodeck.net/download/">v0.1.0</a>');
   });
-  it("shows an app's icon, and a monogram tile when it has none", () => {
+  it("shows an app's icon, and the launcher's cartridge when it has none", () => {
     const withIcon = fixtureApp({ id: "com.example.withicon", icon: "https://raw.githubusercontent.com/example/picodeck-snake/v1.2.0/icon.png" });
     const html = renderIndexPage(fixtureCatalog([fixtureApp(), withIcon]));
     expect(html).toContain('<img class="pd-icon pd-c-games" src="https://raw.githubusercontent.com/example/picodeck-snake/v1.2.0/icon.png"');
-    expect(html).toContain('<span class="pd-icon pd-c-games" aria-hidden="true">S</span>');
+    expect(html).toContain('<span class="pd-icon pd-c-games pd-cart" aria-hidden="true">S</span>');
+    const lower = fixtureApp({ id: "net.picodeck.blockexe", name: "block.exe" });
+    expect(renderIndexPage(fixtureCatalog([lower]))).toContain('pd-cart" aria-hidden="true">B</span>');
   });
 
   it("puts keywords in the row's search text and disables empty categories", () => {
