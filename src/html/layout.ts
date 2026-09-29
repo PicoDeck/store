@@ -46,6 +46,8 @@ time{white-space:nowrap}
 .list-tools{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding-block:24px 12px}
 .tools{display:flex;gap:8px}.tools input{width:280px;min-width:0}
 .listing{padding-bottom:64px}
+.pd-hints{background:#000;border-top:0}
+.pd-hints>.pd-wrap{height:auto;padding-block:6px 20px;color:var(--pd-dim);font-size:13px}
 .pd-row{scroll-margin:72px 0 56px}
 .empty{padding:40px 12px;color:var(--pd-dim)}.empty strong{color:#fff}.empty .pd-btn{margin-top:20px}
 .notice{margin-top:40px;max-width:52em}
