@@ -5,7 +5,7 @@ import { buildZip } from "./helpers/zip-writer";
 import { luaParseCatalog } from "./helpers/lua-parser";
 import type { Env } from "../src/types";
 
-interface FakeRepo { owner: string; name: string; stars?: number; tag?: string | null; appJson?: string | null; zip?: ArrayBuffer; zipName?: string; }
+interface FakeRepo { owner: string; name: string; stars?: number; tag?: string | null; appJson?: string | null; icon?: boolean; zip?: ArrayBuffer; zipName?: string; }
 
 function env(kv = new FakeKV(), r2 = new FakeR2()): { env: Env; kv: FakeKV; r2: FakeR2 } {
   return { env: { STORE_KV: kv as never, STORE_BUCKET: r2 as never, GITHUB_TOKEN: "tok" }, kv, r2 };
@@ -33,7 +33,7 @@ function github(repos: FakeRepo[], firmware: boolean = true) {
             { id: `A-${name}`, name: r.zipName ?? `${name}.zip`, size: 100, downloadUrl: `https://github.com/${owner}/${name}/releases/download/${tag}/${r.zipName ?? `${name}.zip`}` },
           ] } } };
         } else {
-          data[alias] = { object: r.appJson === null ? null : { text: r.appJson ?? manifest(`com.${owner}.${name}`) } };
+          data[alias] = { object: r.appJson === null ? null : { text: r.appJson ?? manifest(`com.${owner}.${name}`) }, icon: r.icon ? { byteSize: 249 } : null };
         }
       }
       return json({ data });
@@ -63,6 +63,17 @@ describe("refresh", () => {
     expect(cat.firmware).toEqual({ version: "0.1.0", repo: "PicoDeck/picodeck", release_tag: "v0.1.0", changelog: "notes (x)", size_kb: 2 });
     expect(r2.store.get(CATALOG_KEY)!.cacheControl).toBe("public, max-age=300, s-maxage=1800, stale-while-revalidate=3600");
     expect(JSON.parse(r2.store.get(DEBUG_KEY)!.body).rejected).toEqual([]);
+  });
+  it("lists the launcher's icon.png at the release tag as the app's icon", async () => {
+    const { env: e, r2 } = env();
+    const { fetch } = github([{ owner: "ex", name: "snake", stars: 5, icon: true }, { owner: "ex", name: "tetris", stars: 1 }]);
+    const res = await refresh(e, { fetch });
+    expect(res).toMatchObject({ ok: true, appCount: 2 });
+    const apps = JSON.parse(r2.store.get(CATALOG_KEY)!.body).apps as Array<{ id: string; icon: string }>;
+    expect(apps.map((a) => [a.id, a.icon])).toEqual([
+      ["com.ex.snake", "https://raw.githubusercontent.com/ex/snake/v1/icon.png"],
+      ["com.ex.tetris", ""],
+    ]);
   });
   it("records rejections with reasons and keeps good apps", async () => {
     const { env: e, r2 } = env();

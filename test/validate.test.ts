@@ -1,13 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { validateRepo, MAX_ASSET_BYTES } from "../src/validate";
 import { LIMITS } from "../src/catalog";
-import type { RepoSummary, RepoRelease, Lookup } from "../src/github";
+import type { RepoSummary, RepoRelease, Lookup, TagFiles } from "../src/github";
 
 const repo: RepoSummary = { fullName: "ex/snake", owner: "ex", name: "snake", description: "d", stars: 3, pushedAt: "2026-09-01T00:00:00Z", htmlUrl: "https://github.com/ex/snake" };
 const asset = (name: string, size = 1000) => ({ id: "A1", name, size, downloadUrl: `https://github.com/ex/snake/releases/download/v1/${name}` });
 const rel = (assets = [asset("snake.zip")]): Lookup<RepoRelease | null> => ({ ok: true, value: { tagName: "v1", assets } });
-const manifest = (over: Record<string, unknown> = {}): Lookup<string | null> =>
-  ({ ok: true, value: JSON.stringify({ id: "com.ex.snake", name: "Snake", version: "1.0.0", category: "Games", requirements: ["audio", 7], ...over }) });
+const manifest = (over: Record<string, unknown> = {}, { hasIcon = false } = {}): Lookup<TagFiles> =>
+  ({ ok: true, value: { appJson: JSON.stringify({ id: "com.ex.snake", name: "Snake", version: "1.0.0", category: "Games", requirements: ["audio", 7], ...over }), hasIcon } });
+const files = (appJson: string | null): Lookup<TagFiles> => ({ ok: true, value: { appJson, hasIcon: false } });
 
 describe("first-party apps in their own repos", () => {
   // Editor, File Manager and Calculator moved out of PicoDeck/picodeck into
@@ -58,6 +59,21 @@ describe("validateRepo", () => {
     expect(r.ok && r.app.warnings.join(" ")).toMatch(/icon ignored/);
   });
 
+  it("uses the launcher's icon.png at the repository root when app.json names no icon", () => {
+    const r = validateRepo(repo, rel(), manifest({}, { hasIcon: true }));
+    expect(r.ok && r.app.manifest.icon).toBe("https://raw.githubusercontent.com/ex/snake/v1/icon.png");
+    expect(r.ok && r.app.warnings).toEqual([]);
+  });
+  it("prefers the icon app.json names over icon.png", () => {
+    const r = validateRepo(repo, rel(), manifest({ icon: "art/big.png" }, { hasIcon: true }));
+    expect(r.ok && r.app.manifest.icon).toBe("https://raw.githubusercontent.com/ex/snake/v1/art/big.png");
+  });
+  it("falls back to icon.png when the icon app.json names is unreadable, still warning", () => {
+    const r = validateRepo(repo, rel(), manifest({ icon: "../big.png" }, { hasIcon: true }));
+    expect(r.ok && r.app.manifest.icon).toBe("https://raw.githubusercontent.com/ex/snake/v1/icon.png");
+    expect(r.ok && r.app.warnings.join(" ")).toMatch(/icon ignored/);
+  });
+
   it("caps screenshots at four and keywords at eight, lower-cased and deduped", () => {
     const shots = ["a.png", "b.png", "c.png", "d.png", "e.png"];
     const words = ["Arcade", "arcade", "Retro", "k3", "k4", "k5", "k6", "k7", "k8", "k9"];
@@ -81,8 +97,8 @@ describe("validateRepo", () => {
   it.each([
     ["github-error: boom", { ok: false, error: "github-error: boom" } as Lookup<RepoRelease | null>, manifest()],
     ["no-release", { ok: true, value: null } as Lookup<RepoRelease | null>, manifest()],
-    ["no-app-json", rel(), { ok: true, value: null } as Lookup<string | null>],
-    ["app-json-invalid", rel(), { ok: true, value: "{nope" } as Lookup<string | null>],
+    ["no-app-json", rel(), files(null)],
+    ["app-json-invalid", rel(), files("{nope")],
     ["missing-field:name", rel(), manifest({ name: undefined })],
     ["missing-field:version", rel(), manifest({ version: 3 })],
     ["bad-id", rel(), manifest({ id: "Snake" })],

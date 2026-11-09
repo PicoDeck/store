@@ -1,4 +1,4 @@
-import type { RepoSummary, RepoRelease, ReleaseAsset, Lookup } from "./github";
+import { LAUNCHER_ICON, type RepoSummary, type RepoRelease, type ReleaseAsset, type Lookup, type TagFiles } from "./github";
 import { normalizeCategory, sanitize, LIMITS, type Category } from "./catalog";
 
 /** Bounded on purpose: the id becomes the `claim:<id>` KV key, and KV keys are limited to 512 bytes. */
@@ -47,14 +47,14 @@ const reject = (reason: string): ValidationResult => ({ ok: false, reason });
 const optStr = (v: unknown, fallback: string): string => (typeof v === "string" ? v : fallback);
 const hasText = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 
-export function validateRepo(repo: RepoSummary, release: Lookup<RepoRelease | null>, appJson: Lookup<string | null>): ValidationResult {
+export function validateRepo(repo: RepoSummary, release: Lookup<RepoRelease | null>, files: Lookup<TagFiles>): ValidationResult {
   if (!release.ok) return reject(release.error);
   if (!release.value) return reject("no-release");
-  if (!appJson.ok) return reject(appJson.error);
-  if (appJson.value === null) return reject("no-app-json");
+  if (!files.ok) return reject(files.error);
+  if (files.value.appJson === null) return reject("no-app-json");
 
   let raw: unknown;
-  try { raw = JSON.parse(appJson.value); } catch { return reject("app-json-invalid"); }
+  try { raw = JSON.parse(files.value.appJson); } catch { return reject("app-json-invalid"); }
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return reject("app-json-invalid");
   const m = raw as Record<string, unknown>;
 
@@ -100,6 +100,8 @@ export function validateRepo(repo: RepoSummary, release: Lookup<RepoRelease | nu
     if (p) icon = rawUrl(repo.fullName, tag, p);
     else warnings.push("icon ignored: not a repository-relative .png/.jpg/.gif/.webp path");
   }
+  // Without a usable icon in app.json, the store shows the one the launcher draws on the device.
+  if (!icon && files.value.hasIcon) icon = rawUrl(repo.fullName, tag, LAUNCHER_ICON);
   const screenshots: string[] = [];
   if (m.screenshots !== undefined) {
     const list = Array.isArray(m.screenshots) ? m.screenshots : [];

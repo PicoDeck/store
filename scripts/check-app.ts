@@ -24,7 +24,8 @@ const repo: RepoSummary = {
 const release = { ok: true as const, value: { tagName: "v0", assets: [
   { id: "check", name: zip, size: 1, downloadUrl: `https://github.com/${fullName}/releases/download/v0/${zip}` },
 ] } };
-const r = validateRepo(repo, release, { ok: true, value: readFileSync(path, "utf8") });
+// hasIcon only picks the store's icon URL, which this check does not print.
+const r = validateRepo(repo, release, { ok: true, value: { appJson: readFileSync(path, "utf8"), hasIcon: false } });
 if (r.ok) {
   console.log(`ok ${r.app.manifest.id} ${r.app.manifest.version} dirname=${r.app.manifest.dirname}`);
 } else {

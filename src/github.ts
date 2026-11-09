@@ -11,11 +11,15 @@ export interface ReleaseAsset { id: string; name: string; size: number; download
 export interface RepoRelease { tagName: string; assets: ReleaseAsset[]; }
 export interface FirmwareRelease { tagName: string; body: string; assets: ReleaseAsset[]; }
 export type Lookup<T> = { ok: true; value: T } | { ok: false; error: string };
+/** The icon the launcher draws, found by name next to app.json rather than declared in it. */
+export const LAUNCHER_ICON = "icon.png";
+/** What the index reads from a repository at its release tag: app.json (null when absent), and whether LAUNCHER_ICON exists. */
+export interface TagFiles { appJson: string | null; hasIcon: boolean; }
 
 export interface GitHubClient {
   searchRepos(): Promise<{ repos: RepoSummary[]; totalCount: number; truncated: boolean }>;
   fetchReleases(repos: RepoSummary[]): Promise<Map<string, Lookup<RepoRelease | null>>>;
-  fetchAppJson(items: Array<{ fullName: string; tag: string }>): Promise<Map<string, Lookup<string | null>>>;
+  fetchTagFiles(items: Array<{ fullName: string; tag: string }>): Promise<Map<string, Lookup<TagFiles>>>;
   fetchFirmwareRelease(repo: string): Promise<Lookup<FirmwareRelease>>;
 }
 
@@ -125,22 +129,28 @@ export function createGitHubClient(fetchFn: typeof fetch, token: string): GitHub
       return out;
     },
 
-    async fetchAppJson(items) {
-      const out = new Map<string, Lookup<string | null>>();
+    async fetchTagFiles(items) {
+      const out = new Map<string, Lookup<TagFiles>>();
       for (let i = 0; i < items.length; i += BATCH) {
         const batch = items.slice(i, i + BATCH);
+        // The icon check rides in the same query as app.json, so it costs no extra subrequest.
         const fields = batch.map((it, j) => {
           const [owner, name] = it.fullName.split("/");
-          const expr = ident(`${it.tag}:app.json`);
-          return `r${j}: repository(owner: "${ident(owner)}", name: "${ident(name)}") { object(expression: "${expr}") { ... on Blob { text } } }`;
+          const tag = ident(it.tag);
+          return `r${j}: repository(owner: "${ident(owner)}", name: "${ident(name)}") { object(expression: "${tag}:app.json") { ... on Blob { text } } ` +
+            `icon: object(expression: "${tag}:${LAUNCHER_ICON}") { ... on Blob { byteSize } } }`;
         });
         const { data, errors } = await graphql(`query { ${fields.join(" ")} }`);
         batch.forEach((it, j) => {
           const alias = `r${j}`, node = data[alias];
           const err = errorFor(errors, alias);
           if (err || !isObj(node)) { out.set(it.fullName, { ok: false, error: err ?? "github-error: no data" }); return; }
-          const obj = node.object;
-          out.set(it.fullName, { ok: true, value: isObj(obj) && typeof obj.text === "string" ? obj.text : null });
+          const obj = node.object, icon = node.icon;
+          out.set(it.fullName, { ok: true, value: {
+            appJson: isObj(obj) && typeof obj.text === "string" ? obj.text : null,
+            // A directory at that path comes back as a Tree, without byteSize, and is not an icon.
+            hasIcon: isObj(icon) && typeof icon.byteSize === "number" && icon.byteSize > 0,
+          } });
         });
       }
       return out;

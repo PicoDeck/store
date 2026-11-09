@@ -106,8 +106,8 @@ describe("fetchReleases", () => {
     expect(map.get("o1/r1")).toEqual({ ok: true, value: null });
     expect(map.get("o2/r2")).toMatchObject({ ok: true, value: { tagName: "v1" } });
     // A prerelease therefore reaches the author as no-release, not as a broken listing.
-    const appJson = { ok: true as const, value: JSON.stringify({ id: "com.o0.r0", name: "R", version: "1.0.0" }) };
-    expect(validateRepo(repos[0], map.get("o0/r0")!, appJson)).toEqual({ ok: false, reason: "no-release" });
+    const files = { ok: true as const, value: { appJson: JSON.stringify({ id: "com.o0.r0", name: "R", version: "1.0.0" }), hasIcon: false } };
+    expect(validateRepo(repos[0], map.get("o0/r0")!, files)).toEqual({ ok: false, reason: "no-release" });
   });
   it("strips quotes and backslashes from owner and name before embedding them", async () => {
     let captured = "";
@@ -128,8 +128,8 @@ describe("fetchReleases", () => {
   });
 });
 
-describe("fetchAppJson", () => {
-  it("reads the blob at the tag and returns null when missing", async () => {
+describe("fetchTagFiles", () => {
+  it("reads app.json at the tag and returns null when missing", async () => {
     const { fetch } = routeFetch({
       "POST api.github.com/graphql": async (req) => {
         const { query } = (await req.json()) as { query: string };
@@ -137,9 +137,28 @@ describe("fetchAppJson", () => {
         return json({ data: { r0: { object: { text: '{"id":"a.b"}' } }, r1: { object: null } } });
       },
     });
-    const map = await createGitHubClient(fetch, "tok").fetchAppJson([{ fullName: "o0/r0", tag: "v1" }, { fullName: "o1/r1", tag: "v1" }]);
-    expect(map.get("o0/r0")).toEqual({ ok: true, value: '{"id":"a.b"}' });
-    expect(map.get("o1/r1")).toEqual({ ok: true, value: null });
+    const map = await createGitHubClient(fetch, "tok").fetchTagFiles([{ fullName: "o0/r0", tag: "v1" }, { fullName: "o1/r1", tag: "v1" }]);
+    expect(map.get("o0/r0")).toEqual({ ok: true, value: { appJson: '{"id":"a.b"}', hasIcon: false } });
+    expect(map.get("o1/r1")).toEqual({ ok: true, value: { appJson: null, hasIcon: false } });
+  });
+  it("checks for the launcher's icon.png at the tag in the same query", async () => {
+    let queries = 0;
+    const { fetch } = routeFetch({
+      "POST api.github.com/graphql": async (req) => {
+        queries++;
+        const { query } = (await req.json()) as { query: string };
+        expect(query).toContain('icon: object(expression: "v1:icon.png")');
+        const text = '{"id":"a.b"}';
+        // r2 has a directory named icon.png: a Tree, which carries no Blob fields.
+        return json({ data: { r0: { object: { text }, icon: { byteSize: 249 } }, r1: { object: { text }, icon: null }, r2: { object: { text }, icon: {} } } });
+      },
+    });
+    const items = [0, 1, 2].map((i) => ({ fullName: `o${i}/r${i}`, tag: "v1" }));
+    const map = await createGitHubClient(fetch, "tok").fetchTagFiles(items);
+    expect(queries).toBe(1);
+    expect(map.get("o0/r0")).toEqual({ ok: true, value: { appJson: '{"id":"a.b"}', hasIcon: true } });
+    expect(map.get("o1/r1")).toMatchObject({ ok: true, value: { hasIcon: false } });
+    expect(map.get("o2/r2")).toMatchObject({ ok: true, value: { hasIcon: false } });
   });
   it("strips quotes and backslashes from an adversarial tag before embedding it in the GraphQL expression", async () => {
     let capturedQuery = "";
@@ -150,9 +169,10 @@ describe("fetchAppJson", () => {
         return json({ data: { r0: { object: null } } });
       },
     });
-    const map = await createGitHubClient(fetch, "tok").fetchAppJson([{ fullName: "o0/r0", tag: 'v1"}) { evil } #\\' }]);
+    const map = await createGitHubClient(fetch, "tok").fetchTagFiles([{ fullName: "o0/r0", tag: 'v1"}) { evil } #\\' }]);
     expect(capturedQuery).toContain('expression: "v1}) { evil } #:app.json"');
-    expect(capturedQuery.match(/expression:/g)).toHaveLength(1);
+    expect(capturedQuery).toContain('expression: "v1}) { evil } #:icon.png"');
+    expect(capturedQuery.match(/expression:/g)).toHaveLength(2);
     expect(capturedQuery.match(/repository\(/g)).toHaveLength(1);
     expect(map.has("o0/r0")).toBe(true);
   });

@@ -65,11 +65,11 @@ async function collectApps(env: Env, gh: GitHubClient, fetchFn: typeof fetch, re
 
   const releases = await gh.fetchReleases(candidates);
   const withTag = candidates.flatMap((r) => { const l = releases.get(r.fullName); return l?.ok && l.value ? [{ fullName: r.fullName, tag: l.value.tagName }] : []; });
-  const manifests = await gh.fetchAppJson(withTag);
+  const tagFiles = await gh.fetchTagFiles(withTag);
 
   const validated: ValidatedApp[] = [];
   for (const repo of candidates) {
-    const result = validateRepo(repo, releases.get(repo.fullName) ?? { ok: false, error: "github-error: no data" }, manifests.get(repo.fullName) ?? { ok: true, value: null });
+    const result = validateRepo(repo, releases.get(repo.fullName) ?? { ok: false, error: "github-error: no data" }, tagFiles.get(repo.fullName) ?? { ok: true, value: { appJson: null, hasIcon: false } });
     if (result.ok) validated.push(result.app); else rejected.push({ repo: repo.fullName, reason: result.reason });
   }
   validated.sort((a, b) => b.repo.stars - a.repo.stars || a.manifest.name.localeCompare(b.manifest.name) || a.repo.fullName.localeCompare(b.repo.fullName));
