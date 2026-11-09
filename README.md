@@ -55,11 +55,20 @@ before anyone else can index one. From a PicoDeck checkout:
 
 It reads every `apps/*/app.json` and writes `claim:<id>` and
 `claim:dir:<dirname>` (dirname lower-cased) as `PicoDeck/picodeck` into the remote namespace, skipping keys that
-already exist (an app that moved to its own repo keeps its own claim). The dirnames PicoDeck ships in the
-firmware image (`store`, `updater`, `filemanager`, `editor`,
-`terminal_example`, `calculator`, `system`, `data`) are refused outright for
-any repository other than `PicoDeck/picodeck`, but ids and the remaining app
-dirnames are not reserved until they are claimed.
+already exist (an app that moved to its own repo keeps its own claim). The dirnames `store`, `updater`, `terminal_example`,
+`system` and `data` are refused outright for any repository other than
+`PicoDeck/picodeck` (the firmware writes the store and System Update to the
+card). Ids and every other dirname are not reserved until they are claimed:
+Editor, File Manager and Calculator have their own repositories
+(`PicoDeck/editor`, `PicoDeck/filemanager`, `PicoDeck/calculator`), which hold
+their names through ordinary claims.
+
+### Check an app before releasing it
+
+    npm run --silent check-app -- <path/to/app.json> <release zip name> <owner/repo>
+
+prints `ok <id> <version> dirname=<dirname>`, or `rejected <reason>` (exit 1),
+from the same rules the refresh applies (`src/validate.ts`).
 
 ### Refresh now
 

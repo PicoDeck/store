@@ -7,7 +7,9 @@ export const DIRNAME_RE = /^[A-Za-z0-9_-]{1,32}$/;
 export const MAX_ASSET_BYTES = 16 * 1024 * 1024;
 
 /** Directories the store itself owns on the device; a third party claiming one would overwrite them. */
-export const RESERVED_DIRNAMES = new Set(["store", "updater", "filemanager", "editor", "terminal_example", "calculator", "system", "data", ".staging"]);
+// Editor, File Manager and Calculator left PicoDeck/picodeck for repos of their own,
+// which hold their names through ordinary claims.
+export const RESERVED_DIRNAMES = new Set(["store", "updater", "terminal_example", "system", "data", ".staging"]);
 /** The first-party repository, allowed to publish the reserved dirnames above. */
 export const FIRST_PARTY_REPO = "PicoDeck/picodeck";
 

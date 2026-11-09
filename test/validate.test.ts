@@ -9,6 +9,17 @@ const rel = (assets = [asset("snake.zip")]): Lookup<RepoRelease | null> => ({ ok
 const manifest = (over: Record<string, unknown> = {}): Lookup<string | null> =>
   ({ ok: true, value: JSON.stringify({ id: "com.ex.snake", name: "Snake", version: "1.0.0", category: "Games", requirements: ["audio", 7], ...over }) });
 
+describe("first-party apps in their own repos", () => {
+  // Editor, File Manager and Calculator moved out of PicoDeck/picodeck into
+  // PicoDeck/<name> (picodeck specs/2026-11-09-first-party-apps-to-store-design.md).
+  it.each(["editor", "filemanager", "calculator"])("accepts %s from its own repo", (name) => {
+    const own: RepoSummary = { ...repo, fullName: `PicoDeck/${name}`, owner: "PicoDeck", name, htmlUrl: `https://github.com/PicoDeck/${name}` };
+    const r = validateRepo(own, rel(), manifest({ id: `net.picodeck.${name}`, dirname: name }));
+    expect(r.ok).toBe(true);
+    expect(r.ok && r.app.manifest.dirname).toBe(name);
+  });
+});
+
 describe("validateRepo", () => {
   it("accepts a conforming repo and fills defaults", () => {
     const r = validateRepo(repo, rel(), manifest());
@@ -84,6 +95,7 @@ describe("validateRepo", () => {
     ["dirname-reserved", rel(), manifest({ dirname: "store" })],
     ["dirname-reserved", rel(), manifest({ dirname: "System" })],
     ["dirname-reserved", rel(), manifest({ id: "com.ex.data" })],
+    ["dirname-reserved", rel(), manifest({ dirname: "terminal_example" })],
     ["no-zip-asset", rel([asset("snake.tar.gz")]), manifest()],
     ["multiple-zip-assets", rel([asset("a.zip"), asset("b.zip")]), manifest()],
     ["asset-not-found:other.zip", rel(), manifest({ asset: "other.zip" })],
